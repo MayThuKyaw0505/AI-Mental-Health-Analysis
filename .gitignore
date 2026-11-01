@@ -1,0 +1,40 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.env.*
+!.env.example
+*.sqlite3
+*.sqlite3-journal
+staticfiles/
+media/
+
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# React / Node.js
+node_modules/
+dist/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Local databases
+*.sqlite3
+*.sqlite3-journal
+
+# Local uploads and generated files
+backend/media/
+backend/staticfiles/
+*.log
+
+# macOS
+.DS_Store
