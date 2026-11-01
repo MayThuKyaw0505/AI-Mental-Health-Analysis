@@ -12,6 +12,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Journals from "./pages/Journals";
 import Assessments from "./pages/Assessments";
 import AssessmentHistory from "./pages/AssessmentHistory";
+import Profile from "./pages/Profile";
 
 function App() {
   return (
@@ -39,6 +40,15 @@ function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
             </ProtectedRoute>
           }
         />

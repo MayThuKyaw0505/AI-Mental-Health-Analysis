@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 
 import api from "../api/axios";
 
@@ -10,6 +10,7 @@ function Login() {
     const [error, setError] = useState("");
 
     const navigate = useNavigate();
+    const location = useLocation();
 
 
     const handleSubmit = async (event) => {
@@ -47,6 +48,9 @@ function Login() {
     return (
         <div>
             <h1>Login</h1>
+            {location.state?.message && (
+                <p role="status">{location.state.message}</p>
+            )}
 
             <form onSubmit={handleSubmit}>
 

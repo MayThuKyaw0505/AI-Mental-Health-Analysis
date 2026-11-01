@@ -4,10 +4,14 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 
-from .views import RegisterView
+from .views import ChangePasswordView, DeleteAccountView, ProfileView, RegisterView
+from .serializers import AccountTokenRefreshSerializer
 
 
 urlpatterns = [
+    path("profile/", ProfileView.as_view(), name="profile"),
+    path("change-password/", ChangePasswordView.as_view(), name="change-password"),
+    path("delete-account/", DeleteAccountView.as_view(), name="delete-account"),
     path(
         "register/",
         RegisterView.as_view(),
@@ -22,7 +26,7 @@ urlpatterns = [
 
     path(
         "token/refresh/",
-        TokenRefreshView.as_view(),
+        TokenRefreshView.as_view(serializer_class=AccountTokenRefreshSerializer),
         name="token-refresh",
     ),
 ]

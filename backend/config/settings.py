@@ -169,3 +169,8 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
 ]
+
+# Reject JWTs issued before a password change, including refreshed access tokens.
+SIMPLE_JWT = {
+    "CHECK_REVOKE_TOKEN": True,
+}

@@ -231,6 +231,7 @@ function Dashboard() {
                 <button onClick={handleLogout}>
                     Logout
                 </button>
+                <Link to="/profile">Profile</Link>
             </header>
 
             {loading && <p>Loading dashboard...</p>}
