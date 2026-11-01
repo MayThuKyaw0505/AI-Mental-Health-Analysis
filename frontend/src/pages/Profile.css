@@ -1,40 +1,54 @@
 .profile-page {
-    width: 100%;
-    max-width: 800px;
-    box-sizing: border-box;
-    margin: 32px auto;
-    padding: 20px;
-    text-align: left;
+  width: 100%;
 }
-
-.profile-page h1 { font-size: clamp(28px, 5vw, 40px); line-height: 1.2; }
-.profile-page a { color: var(--accent); }
-.profile-section { margin-top: 24px; padding: 24px; border: 1px solid var(--border); border-radius: 12px; }
-.profile-section p { margin: 12px 0; }
-.profile-section fieldset { border: 0; margin: 16px 0 0; padding: 0; min-width: 0; }
-.profile-section label { display: block; margin: 16px 0 6px; }
-.profile-section input:not([type="checkbox"]) {
-    display: block;
-    width: 100%;
-    box-sizing: border-box;
-    padding: 10px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    font: inherit;
-    color: var(--text-h);
-    background: var(--bg);
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+  align-items: start;
 }
-.profile-section button { margin-top: 18px; padding: 10px 16px; border: 1px solid var(--accent-border); border-radius: 6px; font: inherit; color: var(--text-h); background: var(--accent-bg); cursor: pointer; }
-.profile-section button:disabled { opacity: 0.6; cursor: wait; }
-.profile-section :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.profile-section .profile-confirm { display: flex; align-items: flex-start; gap: 10px; }
-.profile-confirm input { flex-shrink: 0; margin-top: 6px; }
-.profile-danger { border-color: #bc4242; }
-.profile-section .profile-delete { background: #a51e2c; border-color: #a51e2c; color: white; }
-.profile-notice { padding: 12px; border: 1px solid; border-radius: 6px; overflow-wrap: anywhere; }
-.profile-notice.error { color: #b42336; background: #fff1f2; }
-.profile-notice.success { color: #17643a; background: #effcf3; }
-@media (max-width: 480px) {
-    .profile-page { padding: 12px; margin: 16px auto; }
-    .profile-section { padding: 16px; }
+.profile-section {
+  margin-bottom: 22px;
+}
+.profile-section > p {
+  color: var(--text);
+  font-size: 14px;
+}
+.profile-section form {
+  margin-top: 22px;
+}
+.profile-fields > label:not(.profile-confirm) {
+  margin-top: 16px;
+}
+.profile-fields > input {
+  margin-bottom: 18px;
+}
+.profile-fields > button {
+  margin-top: 8px;
+}
+.profile-danger {
+  border-color: #e5bcc3;
+}
+.profile-danger h2 {
+  color: var(--danger);
+}
+.profile-danger form {
+  max-width: 580px;
+}
+.profile-confirm {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 20px 0 14px;
+  font-weight: 400;
+  min-height: 44px;
+}
+.profile-confirm input {
+  margin-top: 4px;
+}
+@media (max-width: 1050px) {
+  .profile-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
 }
