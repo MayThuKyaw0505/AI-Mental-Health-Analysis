@@ -1,4 +1,7 @@
-from django.shortcuts import render
+import logging
+
+from django.db import transaction
+from django.shortcuts import get_object_or_404
 
 from rest_framework import generics
 from rest_framework.views import APIView
@@ -10,6 +13,9 @@ from journals.models import JournalEntry
 from .models import AIAnalysis
 from .services import analyze_sentiment, analyze_emotion
 from .serializers import AIAnalysisSerializer
+from .validation import validate_analysis_text
+
+logger = logging.getLogger(__name__)
 
 
 class AnalyzeJournalView(APIView):
@@ -29,19 +35,34 @@ class AnalyzeJournalView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        sentiment_result = analyze_sentiment(journal.content)
+        validate_analysis_text(journal.content)
+        original_content = journal.content
+        try:
+            sentiment_result = analyze_sentiment(original_content)
+            emotion_result = analyze_emotion(original_content)
+        except Exception as exc:
+            # Never log text, request bodies, or the model exception message.
+            logger.warning("AI processing failed (%s).", type(exc).__name__)
+            return Response(
+                {"detail": "AI analysis is temporarily unavailable. Your journal is saved. Please try again later."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
-        emotion_result = analyze_emotion(journal.content)
-
-        analysis, created = AIAnalysis.objects.update_or_create(
-            journal_entry=journal,
-            defaults={
-                "sentiment": sentiment_result["sentiment"],
-                "sentiment_confidence": sentiment_result["sentiment_confidence"],
-                "emotion": emotion_result["emotion"],
-                "emotion_confidence": emotion_result["emotion_confidence"],
-            },
-        )
+        with transaction.atomic():
+            current = get_object_or_404(
+                JournalEntry.objects.select_for_update(), pk=journal.pk, user=request.user
+            )
+            if current.content != original_content:
+                return Response({"detail": "This journal changed during analysis. Please analyze the updated entry again."}, status=409)
+            analysis, _ = AIAnalysis.objects.update_or_create(
+                journal_entry=current,
+                defaults={
+                    "sentiment": sentiment_result["sentiment"],
+                    "sentiment_confidence": sentiment_result["sentiment_confidence"],
+                    "emotion": emotion_result["emotion"],
+                    "emotion_confidence": emotion_result["emotion_confidence"],
+                },
+            )
 
         return Response(
             {

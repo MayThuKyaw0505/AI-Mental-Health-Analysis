@@ -189,3 +189,26 @@ class ProfilePrivacyTests(APITestCase):
         self.client.credentials()
         refresh_response = self.client.post(reverse("token-refresh"), {"refresh": self.refresh})
         self.assertEqual(refresh_response.status_code, 401)
+
+
+class RegistrationValidationTests(APITestCase):
+    def test_missing_and_invalid_registration(self):
+        User.objects.create_user(username="existing_student", password="Existing-Safe-725!")
+        valid = {"username": "fictional_student", "email": "student@example.com", "password": "Fictional-Safe-725!"}
+        for changes in [
+            {"username": ""}, {"username": "existing_student"}, {"email": "invalid"},
+            {"password": "short"}, {"password": "password"}, {"password": "123456789012"}, {"password": "fictional_student"},
+        ]:
+            with self.subTest(field=list(changes)):
+                result = self.client.post(reverse("register"), {**valid, **changes})
+                self.assertEqual(result.status_code, 400)
+        self.assertEqual(self.client.post(reverse("register"), {}).status_code, 400)
+
+    def test_password_whitespace_is_preserved_and_never_returned(self):
+        password = "  Fictional-Safe-725!  "
+        result = self.client.post(reverse("register"), {"username": "fictional_new", "password": password})
+        self.assertEqual(result.status_code, 201)
+        user = User.objects.get(username="fictional_new")
+        self.assertTrue(user.check_password(password))
+        self.assertFalse(user.check_password(password.strip()))
+        self.assertNotIn("password", result.data)

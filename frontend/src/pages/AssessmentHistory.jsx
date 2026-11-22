@@ -13,8 +13,9 @@ import {
 
 import api from "../api/axios";
 import Icon from "../components/Icon";
+import SafetyNotice from "../components/SafetyNotice";
 import { EmptyState, Loading, Notice, PageHeader } from "../components/UI";
-import { assessmentType, formatDate } from "../utils/format";
+import { apiError, assessmentType, formatDate } from "../utils/format";
 
 function AssessmentHistory() {
   const [assessments, setAssessments] = useState([]);
@@ -27,8 +28,8 @@ function AssessmentHistory() {
         const response = await api.get("assessments/history/");
 
         setAssessments(response.data);
-      } catch {
-        setError("Unable to load assessment history.");
+      } catch (error) {
+        setError(apiError(error, "Unable to load assessment history."));
       } finally {
         setLoading(false);
       }
@@ -160,6 +161,16 @@ function AssessmentHistory() {
                 </ResponsiveContainer>
               </div>
             </section>
+            {sorted
+              .filter((item) => item.safety_support_recommended === true)
+              .map((item) => (
+                <div key={`safety-${item.id}`}>
+                  <p className="form-help">
+                    PHQ-9 · {formatDate(item.created_at, true)}
+                  </p>
+                  <SafetyNotice historical />
+                </div>
+              ))}
             <section className="card" aria-labelledby="past-heading">
               <div className="section-heading">
                 <h2 id="past-heading">Previous assessments</h2>

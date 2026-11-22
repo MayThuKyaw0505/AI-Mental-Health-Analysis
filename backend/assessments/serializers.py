@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import serializers
 from .models import (
     Questionnaire,
@@ -52,6 +53,10 @@ class AssessmentCreateSerializer(serializers.Serializer):
     def validate(self, data):
         questionnaire = data["questionnaire"]
         responses = data["responses"]
+        expected_count = {"PHQ9": 9, "GAD7": 7}.get(questionnaire.questionnaire_type)
+        numbers = list(questionnaire.questions.values_list("question_number", flat=True))
+        if expected_count is None or sorted(numbers) != list(range(1, expected_count + 1)):
+            raise serializers.ValidationError("This questionnaire is not configured correctly. Please contact the project administrator.")
 
         valid_questions = list(
             questionnaire.questions.values_list("id", flat=True)
@@ -81,6 +86,7 @@ class AssessmentCreateSerializer(serializers.Serializer):
 
         return data
 
+    @transaction.atomic
     def create(self, validated_data):
         user = self.context["request"].user
         questionnaire = validated_data["questionnaire"]
@@ -140,16 +146,25 @@ class AssessmentCreateSerializer(serializers.Serializer):
         return "Unknown"
 
     def to_representation(self, instance):
-        return {
-            "id": instance.id,
-            "questionnaire": instance.questionnaire.name,
-            "total_score": instance.total_score,
-            "severity": instance.severity,
-            "created_at": instance.created_at,
-        }
+        return AssessmentResultSerializer(instance).data
+
+
+def safety_support_recommended(assessment):
+    if assessment.questionnaire.questionnaire_type != "PHQ9":
+        return False
+    # Look up the persisted validated answer by question NUMBER, never list position.
+    answers = [answer for answer in assessment.responses.all() if answer.question.question_number == 9]
+    if not answers:
+        return None  # Historical data without a recorded answer cannot be assessed.
+    return any(answer.score > 0 for answer in answers)
 
 
 class AssessmentResultSerializer(serializers.ModelSerializer):
+    safety_support_recommended = serializers.SerializerMethodField()
+
+    def get_safety_support_recommended(self, instance):
+        return safety_support_recommended(instance)
+
     questionnaire = serializers.CharField(
         source="questionnaire.name",
         read_only=True
@@ -163,4 +178,5 @@ class AssessmentResultSerializer(serializers.ModelSerializer):
             "total_score",
             "severity",
             "created_at",
+            "safety_support_recommended",
         ]

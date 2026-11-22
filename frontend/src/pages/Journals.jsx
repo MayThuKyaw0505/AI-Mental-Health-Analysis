@@ -3,7 +3,7 @@ import api from "../api/axios";
 import ConfirmDialog from "../components/ConfirmDialog";
 import Icon from "../components/Icon";
 import { EmptyState, Loading, Notice, PageHeader } from "../components/UI";
-import { formatDate } from "../utils/format";
+import { apiError, formatDate } from "../utils/format";
 
 async function fetchJournalData(signal) {
   const [journalResponse, analysisResponse] = await Promise.all([
@@ -37,9 +37,12 @@ function Journals() {
       const data = await fetchJournalData();
       setJournals(data.journals);
       setAnalysisResults(data.results);
-    } catch {
+    } catch (error) {
       setError(
-        "Unable to load journals or analysis results. Please reload to try again.",
+        apiError(
+          error,
+          "Unable to load journals or analysis results. Please reload to try again.",
+        ),
       );
     }
   };
@@ -51,10 +54,13 @@ function Journals() {
         setJournals(data.journals);
         setAnalysisResults(data.results);
       })
-      .catch(() => {
+      .catch((error) => {
         if (!controller.signal.aborted)
           setError(
-            "Unable to load journals or analysis results. Please reload to try again.",
+            apiError(
+              error,
+              "Unable to load journals or analysis results. Please reload to try again.",
+            ),
           );
       })
       .finally(() => {
@@ -108,8 +114,8 @@ function Journals() {
           : "Your journal entry has been saved.",
       );
       await loadJournals();
-    } catch {
-      setError("Unable to save journal.");
+    } catch (error) {
+      setError(apiError(error, "Unable to save journal."));
     } finally {
       setSaving(false);
     }
@@ -151,8 +157,8 @@ function Journals() {
 
       await loadJournals();
       setSuccess("Journal entry and any saved analysis deleted.");
-    } catch {
-      setError("Unable to delete journal.");
+    } catch (error) {
+      setError(apiError(error, "Unable to delete journal."));
     } finally {
       setDeleting(false);
       setDeleteId(null);
@@ -167,14 +173,16 @@ function Journals() {
     try {
       const response = await api.post(
         `analysis/journals/${journalId}/analyze/`,
+        undefined,
+        { timeout: 120000 },
       );
 
       setAnalysisResults((previous) => ({
         ...previous,
         [journalId]: response.data,
       }));
-    } catch {
-      setError("Unable to analyze this journal entry.");
+    } catch (error) {
+      setError(apiError(error, "Unable to analyze this journal entry."));
     } finally {
       setAnalyzingId(null);
     }
@@ -233,9 +241,17 @@ function Journals() {
                   onChange={(event) => setContent(event.target.value)}
                   placeholder="What's on your mind today?"
                   rows={7}
+                  maxLength={20000}
+                  aria-describedby="journal-input-help"
                   required
                 />
               </div>
+              <p id="journal-input-help" className="form-help">
+                Up to 20,000 characters. You may save Burmese text, but
+                automated analysis supports English only. Long entries are
+                truncated to each model's token limit, so predictions may
+                describe only the beginning.
+              </p>
               <div className="actions">
                 <button type="submit">
                   <Icon name="journal" />
@@ -353,7 +369,7 @@ function Journals() {
                       >
                         <div className="analysis-heading">
                           <Icon name="spark" />
-                          <h4>AI reflection</h4>
+                          <h4>Automated AI predictions</h4>
                         </div>
                         <dl className="analysis-grid">
                           <div className="analysis-metric">
@@ -375,6 +391,9 @@ function Journals() {
                           AI predictions describe patterns in your writing.
                           Confidence reflects the model's certainty, not
                           clinical accuracy. These results are not a diagnosis.
+                          The pretrained models are intended for English text
+                          and may be biased or inaccurate. Burmese analysis is
+                          not supported; no translation is performed.
                         </p>
                       </section>
                     )}

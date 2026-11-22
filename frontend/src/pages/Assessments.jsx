@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/axios";
+import { apiError } from "../utils/format";
 import Icon from "../components/Icon";
+import SafetyNotice from "../components/SafetyNotice";
 import { EmptyState, Loading, Notice, PageHeader } from "../components/UI";
 
 const ANSWER_OPTIONS = [
@@ -25,8 +27,8 @@ function Assessments() {
       try {
         const response = await api.get("questionnaires/");
         setQuestionnaires(response.data);
-      } catch {
-        setError("Unable to load questionnaires.");
+      } catch (error) {
+        setError(apiError(error, "Unable to load questionnaires."));
       } finally {
         setLoading(false);
       }
@@ -39,7 +41,16 @@ function Assessments() {
     (item) => String(item.id) === selectedId,
   );
 
-  const questions = selectedQuestionnaire?.questions ?? [];
+  const questions = [...(selectedQuestionnaire?.questions ?? [])].sort(
+    (a, b) => a.question_number - b.question_number,
+  );
+  const questionNine = questions.find(
+    (question) => question.question_number === 9,
+  );
+  const showSafety =
+    selectedQuestionnaire?.questionnaire_type === "PHQ9" &&
+    questionNine &&
+    [1, 2, 3].includes(answers[questionNine.id]);
 
   const handleSelect = (event) => {
     setSelectedId(event.target.value);
@@ -83,8 +94,10 @@ function Assessments() {
       const response = await api.post("assessments/", payload);
 
       setResult(response.data);
-    } catch {
-      setError("Unable to submit assessment. Please try again.");
+    } catch (error) {
+      setError(
+        apiError(error, "Unable to submit assessment. Please try again."),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -167,14 +180,14 @@ function Assessments() {
           {questions.length === 0 && (
             <Notice>This questionnaire has no questions available yet.</Notice>
           )}
-          {questions.map((question, index) => (
+          {questions.map((question) => (
             <fieldset
               className="question-card"
               key={question.id}
               disabled={submitting}
             >
               <legend>
-                {index + 1}. {question.question_text}
+                {question.question_number}. {question.question_text}
               </legend>
               <div className="answer-options">
                 {ANSWER_OPTIONS.map((option) => (
@@ -194,6 +207,7 @@ function Assessments() {
               </div>
             </fieldset>
           ))}
+          {showSafety && <SafetyNotice />}
           <div className="actions">
             <button type="submit" disabled={!allAnswered || submitting}>
               {submitting ? "Saving your assessment…" : "Submit assessment"}
@@ -237,6 +251,7 @@ function Assessments() {
             This screening score does not establish a diagnosis. A qualified
             professional can help you understand what your results mean.
           </p>
+          {result.safety_support_recommended === true && <SafetyNotice />}
           <div className="actions">
             <Link className="button" to="/assessment-history">
               View assessment history

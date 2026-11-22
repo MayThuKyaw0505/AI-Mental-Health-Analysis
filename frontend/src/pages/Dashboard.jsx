@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import api from "../api/axios";
 import Icon from "../components/Icon";
 import { EmptyState, Loading, Notice, PageHeader } from "../components/UI";
-import { assessmentType, formatDate } from "../utils/format";
+import { apiError, assessmentType, formatDate } from "../utils/format";
 
 function Dashboard() {
   const [journals, setJournals] = useState([]);
@@ -21,10 +21,13 @@ function Dashboard() {
         ]);
         setJournals(journalResponse.data);
         setAssessments(assessmentResponse.data);
-      } catch {
+      } catch (error) {
         if (!controller.signal.aborted)
           setError(
-            "Unable to load dashboard data. Please reload the page to try again.",
+            apiError(
+              error,
+              "Unable to load dashboard data. Please reload the page to try again.",
+            ),
           );
       } finally {
         if (!controller.signal.aborted) setLoading(false);

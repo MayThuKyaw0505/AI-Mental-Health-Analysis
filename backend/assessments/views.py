@@ -35,4 +35,4 @@ class AssessmentHistoryView(generics.ListAPIView):
             user=self.request.user
         ).select_related(
             "questionnaire"
-        ).order_by("-created_at")
+        ).prefetch_related("responses__question").order_by("-created_at")

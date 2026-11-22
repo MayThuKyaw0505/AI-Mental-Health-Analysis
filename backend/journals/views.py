@@ -8,15 +8,6 @@ from .models import JournalEntry
 from .serializers import JournalEntrySerializer
 
 
-@transaction.atomic
-def perform_update(self, serializer):
-    journal = serializer.save()
-
-    AIAnalysis.objects.filter(
-        journal_entry=journal
-    ).delete()
-
-
 class JournalListCreateView(generics.ListCreateAPIView):
     serializer_class = JournalEntrySerializer
     permission_classes = [IsAuthenticated]
@@ -38,3 +29,8 @@ class JournalDetailView(generics.RetrieveUpdateDestroyAPIView):
         return JournalEntry.objects.filter(
             user=self.request.user
         )
+
+    @transaction.atomic
+    def perform_update(self, serializer):
+        journal = serializer.save()
+        AIAnalysis.objects.filter(journal_entry=journal).delete()

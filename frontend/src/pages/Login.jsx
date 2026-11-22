@@ -41,6 +41,9 @@ function Login() {
       description="Sign in to continue your personal reflections."
     >
       <Notice type="success">{location.state?.message}</Notice>
+      {new URLSearchParams(location.search).get("session") === "expired" && (
+        <Notice>Your session expired. Please sign in again to continue.</Notice>
+      )}
       <form onSubmit={handleSubmit} aria-busy={submitting}>
         <fieldset disabled={submitting}>
           <div className="form-field">

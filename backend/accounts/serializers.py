@@ -9,6 +9,7 @@ from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         write_only=True,
+        trim_whitespace=False,
         min_length=8
     )
 
@@ -21,6 +22,14 @@ class RegisterSerializer(serializers.ModelSerializer):
             "password",
         ]
         read_only_fields = ["id"]
+
+    def validate(self, attrs):
+        candidate = User(username=attrs["username"], email=attrs.get("email", ""))
+        try:
+            validate_password(attrs["password"], candidate)
+        except ValidationError as error:
+            raise serializers.ValidationError({"password": error.messages})
+        return attrs
 
     def create(self, validated_data):
         user = User.objects.create_user(

@@ -14,25 +14,21 @@ import os
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
+from .env import load_local_env
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_local_env(BASE_DIR / ".env")
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', '')
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', 'true').lower() == 'true'
-
-if not SECRET_KEY:
-    if not DEBUG:
-        raise ImproperlyConfigured(
-            'Set DJANGO_SECRET_KEY when DJANGO_DEBUG=false.')
-    SECRET_KEY = 'django-insecure-local-development-only'
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
+DEBUG = os.environ.get("DJANGO_DEBUG", "false").lower() == "true"
+if not SECRET_KEY or SECRET_KEY == "replace-with-a-random-local-key":
+    raise ImproperlyConfigured("Set DJANGO_SECRET_KEY in backend/.env or the environment.")
 
 ALLOWED_HOSTS = [
     host.strip()
@@ -106,11 +102,11 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "mental_health_db",
-        "USER": "postgres",
-        "PASSWORD": "postgres",
-        "HOST": "localhost",
-        "PORT": "5432",
+        "NAME": os.environ.get("POSTGRES_NAME", ""),
+        "USER": os.environ.get("POSTGRES_USER", ""),
+        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", ""),
+        "HOST": os.environ.get("POSTGRES_HOST", "localhost"),
+        "PORT": os.environ.get("POSTGRES_PORT", "5432"),
     }
 }
 
@@ -161,6 +157,8 @@ MAILERS = {
     },
 }
 REST_FRAMEWORK = {
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
+    "EXCEPTION_HANDLER": "api.exceptions.safe_exception_handler",
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",
@@ -168,9 +166,13 @@ REST_FRAMEWORK = {
 }
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    "http://127.0.0.1:5173",
 ]
 
 # Reject JWTs issued before a password change, including refreshed access tokens.
 SIMPLE_JWT = {
     "CHECK_REVOKE_TOKEN": True,
 }
+
+# Keep authenticated responses out of browser/proxy caches (including errors).
+MIDDLEWARE.insert(0, "api.middleware.PrivateAPIResponseMiddleware")
